@@ -1,4 +1,4 @@
-package com.serical.client;
+package com.serical.client.gui;
 
 public class Launcher {
 

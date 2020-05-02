@@ -1,12 +1,12 @@
 package com.serical.client.im;
 
+import com.serical.common.ImMessageDecoder;
+import com.serical.common.ImMessageEncoder;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
-import io.netty.handler.codec.Delimiters;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.ssl.SslContext;
 
 public class SecureChatClientInitializer extends ChannelInitializer<SocketChannel> {
@@ -29,9 +29,10 @@ public class SecureChatClientInitializer extends ChannelInitializer<SocketChanne
         pipeline.addLast(sslCtx.newHandler(ch.alloc(), SecureChatClient.HOST, SecureChatClient.PORT));
 
         // On top of the SSL handler, add the text line codec.
-        pipeline.addLast(new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
-        pipeline.addLast(new StringDecoder());
-        pipeline.addLast(new StringEncoder());
+        pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 2, 0, 2));
+        pipeline.addLast(new LengthFieldPrepender(2));
+        pipeline.addLast(new ImMessageDecoder());
+        pipeline.addLast(new ImMessageEncoder());
 
         // and then business logic.
         pipeline.addLast(new SecureChatClientHandler());
