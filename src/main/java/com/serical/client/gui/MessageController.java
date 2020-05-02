@@ -60,7 +60,19 @@ public class MessageController {
             final int index = userListView.getSelectionModel().getSelectedIndex();
             if (index != -1) {
                 this.selectUser = userList.get(index);
-                chooseWho.setText("您[" + ClientContext.getCurrentUser().getUserName() + "] 正在与 [" + this.selectUser.getUserName() + "] 对线中。。。。。。");
+                chooseWho.setText("您[" + ClientContext.getCurrentUser().getUserName() + "] 正在与 ["
+                        + this.selectUser.getUserName() + "] 对线中。。。。。。");
+
+                // 请求对方公钥
+                final ImUser currentUser = ClientContext.getCurrentUser();
+                final ImMessage imMessage = ImMessage.builder()
+                        .sender(currentUser.getUid())
+                        .receiver(selectUser.getUid())
+                        .messageType(MessageType.REQUEST_PUBLIC_KEY)
+                        .createTime(DateUtil.date())
+                        .build();
+                // 发送消息
+                ImUtil.sendMessage(imMessage);
             }
         });
     }
@@ -76,15 +88,14 @@ public class MessageController {
             if (StrUtil.isBlank(message)) {
                 return;
             }
-            System.out.println(message);
 
             if (null == selectUser || StrUtil.isBlank(selectUser.getUid())) {
                 FxUtil.alert(Alert.AlertType.ERROR, "你他吗倒是选个人再聊天啊🙄");
                 return;
             }
 
+            // 组装消息体
             final ImUser currentUser = ClientContext.getCurrentUser();
-
             final ImMessage imMessage = ImMessage.builder()
                     .sender(currentUser.getUid())
                     .senderName(currentUser.getUserName())
@@ -93,11 +104,12 @@ public class MessageController {
                     .message(message)
                     .createTime(DateUtil.date())
                     .build();
-            // 发送消息
-            ImUtil.sendMessage(imMessage);
 
             // append自己发的消息
             appendMessage(imMessage);
+
+            // 发送消息
+            ImUtil.sendMessage(imMessage);
 
             textArea.clear();
         }

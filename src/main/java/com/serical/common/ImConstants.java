@@ -12,5 +12,8 @@ public interface ImConstants {
      */
     String defaultServerUid = "9EB8B408-022C-48D0-9FA2-417915042C2B";
 
+    /**
+     * 系统名称
+     */
     String systemName = "神他吗加密聊天系统";
 }

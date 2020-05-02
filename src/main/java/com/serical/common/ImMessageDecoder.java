@@ -1,6 +1,5 @@
 package com.serical.common;
 
-import cn.hutool.core.util.ArrayUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,13 +17,7 @@ public class ImMessageDecoder extends MessageToMessageDecoder<ByteBuf> {
         // decode
         byte[] bytes = new byte[msg.readableBytes()];
         msg.readBytes(bytes);
-        final ImMessage message = objectMapper.readValue(ArrayUtil.addAll(bytes, new byte[]{10}), ImMessage.class);
-
-        // 解密
-        if (message.getMessageType() == MessageType.TEXT_MESSAGE) {
-            // TODO RSA解密消息体
-        }
-
+        final ImMessage message = objectMapper.readValue(bytes, ImMessage.class);
         out.add(message);
     }
 }

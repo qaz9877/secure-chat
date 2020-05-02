@@ -2,6 +2,7 @@ package com.serical.client.im;
 
 import com.serical.common.ImMessageDecoder;
 import com.serical.common.ImMessageEncoder;
+import com.serical.common.ImMessageRSADecoder;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -32,6 +33,7 @@ public class SecureChatClientInitializer extends ChannelInitializer<SocketChanne
         pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 2, 0, 2));
         pipeline.addLast(new LengthFieldPrepender(2));
         pipeline.addLast(new ImMessageDecoder());
+        pipeline.addLast(new ImMessageRSADecoder());
         pipeline.addLast(new ImMessageEncoder());
 
         // and then business logic.

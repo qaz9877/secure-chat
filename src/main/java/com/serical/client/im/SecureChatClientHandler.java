@@ -2,27 +2,31 @@ package com.serical.client.im;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import com.serical.client.gui.App;
 import com.serical.common.ImConstants;
 import com.serical.common.ImMessage;
 import com.serical.common.ImUser;
 import com.serical.common.MessageType;
 import com.serical.util.FxUtil;
+import com.serical.util.ImUtil;
+import com.serical.util.RSAUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.security.GeneralSecurityException;
+import java.security.PublicKey;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessage> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, ImMessage msg) throws Exception {
-        System.err.println(msg);
+        final ImUser currentUser = ClientContext.getCurrentUser();
+        System.err.println(currentUser.getUid() + ":" + currentUser.getUserName() + " message: " + msg);
 
         // 与服务端建立连接后发送注册请求
         if (msg.getMessageType() == MessageType.CONNECT) {
@@ -31,6 +35,10 @@ public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessa
             sendOnlineMessage(ctx);
         } else if (msg.getMessageType() == MessageType.ONLINE) {
             handlerOnline(msg);
+        } else if (msg.getMessageType() == MessageType.REQUEST_PUBLIC_KEY) {
+            handlerRequestPublicKey(msg);
+        } else if (msg.getMessageType() == MessageType.RESPONSE_PUBLIC_KEY) {
+            handlerResponsePublicKey(msg);
         } else if (msg.getMessageType() == MessageType.TEXT_MESSAGE) {
             handlerTextMessage(msg);
         } else if (msg.getMessageType() == MessageType.SYSTEM_MESSAGE) {
@@ -95,6 +103,43 @@ public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessa
                     .collect(Collectors.toList())
             );
         });
+    }
+
+    /**
+     * 发送自己的公钥给对方
+     *
+     * @param msg 消息
+     */
+    private void handlerRequestPublicKey(ImMessage msg) {
+        // 请求对方公钥
+        final ImUser currentUser = ClientContext.getCurrentUser();
+        final ImMessage imMessage = ImMessage.builder()
+                .sender(currentUser.getUid())
+                .receiver(msg.getSender())
+                .messageType(MessageType.RESPONSE_PUBLIC_KEY)
+                .message(Base64.getEncoder().encodeToString(currentUser.getPublicKey().getEncoded()))
+                .createTime(DateUtil.date())
+                .build();
+        // 发送消息
+        ImUtil.sendMessage(imMessage);
+    }
+
+    /**
+     * 保存对方发来的公钥
+     *
+     * @param msg 消息
+     */
+    private void handlerResponsePublicKey(ImMessage msg) {
+        if (msg.getCode() == 0L) {
+            Optional.ofNullable(msg.getMessage()).map(Object::toString).filter(StrUtil::isNotBlank).ifPresent(key -> {
+                try {
+                    final PublicKey publicKey = RSAUtil.getPublicKey(key);
+                    ClientContext.getUserPublicKey().put(msg.getSender(), publicKey);
+                } catch (GeneralSecurityException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 
     /**

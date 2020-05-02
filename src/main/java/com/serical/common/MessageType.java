@@ -14,8 +14,10 @@ public enum MessageType {
     ONLINE(1002, "获取在线用户"),
     CONNECT(2001, "建立连接"),
     DISCONNECT(2002, "断开连接"),
-    TEXT_MESSAGE(3001, "文本消息"),
-    SYSTEM_MESSAGE(4001, "服务端发到客户端的系统消息"),
+    REQUEST_PUBLIC_KEY(3001, "请求公钥"),
+    RESPONSE_PUBLIC_KEY(3002, "响应公钥"),
+    TEXT_MESSAGE(4001, "文本消息"),
+    SYSTEM_MESSAGE(5001, "服务端发到客户端的系统消息"),
     ;
 
     private int code;

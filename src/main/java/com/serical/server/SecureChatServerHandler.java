@@ -53,6 +53,9 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
             handlerRegister(ctx, msg);
         } else if (msg.getMessageType() == MessageType.ONLINE) {
             handlerOnline(ctx, msg);
+        } else if (msg.getMessageType() == MessageType.REQUEST_PUBLIC_KEY
+                || msg.getMessageType() == MessageType.RESPONSE_PUBLIC_KEY) {
+            handlerPublicKey(ctx, msg);
         } else if (msg.getMessageType() == MessageType.TEXT_MESSAGE) {
             handlerTextMessage(ctx, msg);
         }
@@ -87,6 +90,12 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
             // 服务端主动更新每个客户端的用户列表
             refreshClientOnlineUser(v, k);
         });
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        cause.printStackTrace();
+        // ctx.close();
     }
 
     /**
@@ -142,24 +151,29 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
     }
 
     /**
+     * 转发获取公钥请求
+     *
+     * @param ctx 发送方连接
+     * @param msg 客户端发来的消息
+     */
+    private void handlerPublicKey(ChannelHandlerContext ctx, ImMessage msg) {
+        final ChannelHandlerContext receiverChannel = findReceiver(ctx, msg);
+        if (receiverChannel == null) return;
+
+        // 发送消息
+        msg.setCode(0L);
+        receiverChannel.writeAndFlush(msg);
+    }
+
+    /**
      * 处理发送文本消息请求
      *
      * @param ctx 发送方连接
      * @param msg 客户端发来的消息
      */
     private void handlerTextMessage(ChannelHandlerContext ctx, ImMessage msg) {
-        // 检查接收方uid
-        if (StrUtil.isBlank(msg.getReceiver())) {
-            ImUtil.sendErrorTextMessage(ctx, msg.getSender(), "消息格式错误,对方uid不存在");
-            return;
-        }
-
-        // 检查接收方连接
-        final ChannelHandlerContext receiverChannel = ServerContext.getOnlineChannels().get(msg.getReceiver());
-        if (null == receiverChannel) {
-            ImUtil.sendErrorTextMessage(ctx, msg.getSender(), "消息格式错误,对方已下线");
-            return;
-        }
+        final ChannelHandlerContext receiverChannel = findReceiver(ctx, msg);
+        if (receiverChannel == null) return;
 
         // 获取最新的用户名
         msg.setCode(0L);
@@ -169,9 +183,26 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
         receiverChannel.writeAndFlush(msg);
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        cause.printStackTrace();
-        ctx.close();
+    /**
+     * 查找接收方用户连接
+     *
+     * @param ctx 发送方
+     * @param msg 发送过来的消息
+     * @return 接收方连接
+     */
+    private ChannelHandlerContext findReceiver(ChannelHandlerContext ctx, ImMessage msg) {
+        // 检查接收方uid
+        if (StrUtil.isBlank(msg.getReceiver())) {
+            ImUtil.sendErrorTextMessage(ctx, msg.getSender(), "消息格式错误,对方uid不存在");
+            return null;
+        }
+
+        // 检查接收方连接
+        final ChannelHandlerContext receiverChannel = ServerContext.getOnlineChannels().get(msg.getReceiver());
+        if (null == receiverChannel) {
+            ImUtil.sendErrorTextMessage(ctx, msg.getSender(), "消息格式错误,对方已下线");
+            return null;
+        }
+        return receiverChannel;
     }
 }
