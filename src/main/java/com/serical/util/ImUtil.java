@@ -30,8 +30,8 @@ public class ImUtil {
      * @param receiver 接收方
      * @param message  文本消息
      */
-    public static void sendSuccessMessage(ChannelHandlerContext ctx, String receiver, String message) {
-        sendMessage(ctx, receiver, 0L, message);
+    public static void sendSuccessTextMessage(ChannelHandlerContext ctx, String receiver, String message) {
+        sendMessage(ctx, receiver, 0L, MessageType.TEXT_MESSAGE, message);
     }
 
     /**
@@ -41,8 +41,8 @@ public class ImUtil {
      * @param receiver 接收方
      * @param message  文本消息
      */
-    public static void sendErrorsMessage(ChannelHandlerContext ctx, String receiver, String message) {
-        sendMessage(ctx, receiver, -1L, message);
+    public static void sendErrorTextMessage(ChannelHandlerContext ctx, String receiver, String message) {
+        sendMessage(ctx, receiver, -1L, MessageType.TEXT_MESSAGE, message);
     }
 
     /**
@@ -53,11 +53,11 @@ public class ImUtil {
      * @param code     状态码
      * @param message  文本消息
      */
-    public static void sendMessage(ChannelHandlerContext ctx, String receiver, long code, String message) {
+    public static void sendMessage(ChannelHandlerContext ctx, String receiver, long code, MessageType messageType, String message) {
         ctx.writeAndFlush(ImMessage.builder()
                 .sender(ImConstants.defaultServerUid)
                 .receiver(receiver)
-                .messageType(MessageType.TEXT_MESSAGE)
+                .messageType(messageType)
                 .code(code)
                 .message(message)
                 .createTime(DateUtil.date())

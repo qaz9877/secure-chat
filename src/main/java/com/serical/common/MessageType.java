@@ -15,6 +15,7 @@ public enum MessageType {
     CONNECT(2001, "建立连接"),
     DISCONNECT(2002, "断开连接"),
     TEXT_MESSAGE(3001, "文本消息"),
+    SYSTEM_MESSAGE(4001, "服务端发到客户端的系统消息"),
     ;
 
     private int code;

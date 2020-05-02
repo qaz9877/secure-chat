@@ -16,6 +16,7 @@ import javafx.scene.control.Alert;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessage> {
 
@@ -32,6 +33,8 @@ public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessa
             handlerOnline(msg);
         } else if (msg.getMessageType() == MessageType.TEXT_MESSAGE) {
             handlerTextMessage(msg);
+        } else if (msg.getMessageType() == MessageType.SYSTEM_MESSAGE) {
+            handlerSystemMessage(msg);
         }
     }
 
@@ -87,7 +90,10 @@ public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessa
         Platform.runLater(() -> {
             List<ImUser> imUsers = new ArrayList<>();
             userList.forEach(user -> imUsers.add(ImUser.builder().uid(user.get("uid")).userName(user.get("userName")).build()));
-            App.getMessageController().refreshUserList(imUsers);
+            App.getMessageController().refreshUserList(imUsers.stream()
+                    .filter(v -> !v.getUid().equals(ClientContext.getCurrentUser().getUid()))
+                    .collect(Collectors.toList())
+            );
         });
     }
 
@@ -101,6 +107,17 @@ public class SecureChatClientHandler extends SimpleChannelInboundHandler<ImMessa
             Platform.runLater(() -> App.getMessageController().appendMessage(msg));
         } else {
             FxUtil.alert(Alert.AlertType.ERROR, msg.getMessage() + "");
+        }
+    }
+
+    /**
+     * 处理服务端发过来的系统通知消息
+     *
+     * @param msg 消息
+     */
+    private void handlerSystemMessage(ImMessage msg) {
+        if (msg.getCode() == 0L) {
+            Platform.runLater(() -> App.getMessageController().showSystemMessage(msg));
         }
     }
 }

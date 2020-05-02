@@ -19,6 +19,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessage> {
@@ -57,6 +58,37 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
         }
     }
 
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        // 查找下线的连接对象
+        Map.Entry<String, ChannelHandlerContext> removeEntry = null;
+        for (Map.Entry<String, ChannelHandlerContext> entry : ServerContext.getOnlineChannels().entrySet()) {
+            if (ctx.equals(entry.getValue())) {
+                removeEntry = entry;
+                break;
+            }
+        }
+
+        if (null == removeEntry) {
+            return;
+        }
+
+        // 从在线连接池中移除下线用户连接
+        ServerContext.getOnlineChannels().remove(removeEntry.getKey());
+        // 从在线用户信息中移除该用户
+        final String userName = ServerContext.getOnlineUsers().get(removeEntry.getKey());
+        ServerContext.getOnlineUsers().remove(removeEntry.getKey());
+
+        // 循环发送下线通知, 刷新每个客户端用户列表
+        ServerContext.getOnlineChannels().forEach((k, v) -> {
+            // 发送下线系统通知
+            ImUtil.sendMessage(v, k, 0L, MessageType.SYSTEM_MESSAGE, "用户[" + userName + "]下线了, 好聚好散🤚");
+
+            // 服务端主动更新每个客户端的用户列表
+            refreshClientOnlineUser(v, k);
+        });
+    }
+
     /**
      * 处理注册请求
      *
@@ -71,7 +103,7 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
         // 通知所有人当前用户上线了
         ServerContext.getOnlineChannels().forEach((k, v) -> {
                     // 发送上线文本通知
-                    ImUtil.sendSuccessMessage(v, k, msg.getMessage() + "]上线了, 快去搞他😍");
+                    ImUtil.sendMessage(v, k, 0L, MessageType.SYSTEM_MESSAGE, "用户[" + msg.getMessage() + "]上线了, 快去搞他😍");
 
                     // 服务端主动更新每个客户端的用户列表
                     refreshClientOnlineUser(v, k);
@@ -118,14 +150,14 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<ImMessa
     private void handlerTextMessage(ChannelHandlerContext ctx, ImMessage msg) {
         // 检查接收方uid
         if (StrUtil.isBlank(msg.getReceiver())) {
-            ImUtil.sendErrorsMessage(ctx, msg.getSender(), "消息格式错误,对方uid不存在");
+            ImUtil.sendErrorTextMessage(ctx, msg.getSender(), "消息格式错误,对方uid不存在");
             return;
         }
 
         // 检查接收方连接
         final ChannelHandlerContext receiverChannel = ServerContext.getOnlineChannels().get(msg.getReceiver());
         if (null == receiverChannel) {
-            ImUtil.sendErrorsMessage(ctx, msg.getSender(), "消息格式错误,对方已下线");
+            ImUtil.sendErrorTextMessage(ctx, msg.getSender(), "消息格式错误,对方已下线");
             return;
         }
 

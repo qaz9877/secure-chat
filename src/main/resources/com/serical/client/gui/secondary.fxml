@@ -4,25 +4,45 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.*?>
-
+<?import javafx.scene.control.ScrollPane?>
 
 <BorderPane prefWidth="800.0" prefHeight="600.0" xmlns="http://javafx.com/javafx/10.0.2-internal"
             xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.serical.client.gui.MessageController">
     <right>
-        <ListView fx:id="userListView" prefWidth="200.0" prefHeight="600.0" BorderPane.alignment="CENTER">
-            <Label text="用户列表:"/>
-        </ListView>
+        <BorderPane>
+            <top>
+                <Label text="用户列表:" prefWidth="200.0" prefHeight="30.0"/>
+            </top>
+            <center>
+                <ListView fx:id="userListView" prefWidth="200.0" prefHeight="570.0" BorderPane.alignment="CENTER">
+                </ListView>
+            </center>
+        </BorderPane>
     </right>
     <center>
         <BorderPane prefWidth="600.0" prefHeight="600.0" BorderPane.alignment="CENTER">
             <center>
-                <VBox fx:id="showMessage" prefWidth="600.0" prefHeight="450.0">
-                    <Label text="caonima"/>
-                    <Label text="caonima1"/>
-                </VBox>
+                <BorderPane prefWidth="600.0" prefHeight="450.0">
+                    <top>
+                        <Label fx:id="chooseWho" prefWidth="600.0" prefHeight="25.0"/>
+                    </top>
+                    <center>
+                        <ScrollPane fx:id="scrollMessage">
+                            <VBox fx:id="showMessage">
+                            </VBox>
+                        </ScrollPane>
+                    </center>
+                </BorderPane>
             </center>
             <bottom>
-                <TextArea fx:id="textArea" prefWidth="600.0" prefHeight="150.0" onKeyReleased="#sendMessage"/>
+                <BorderPane>
+                    <center>
+                        <TextArea fx:id="textArea" prefWidth="600.0" prefHeight="150.0" onKeyReleased="#sendMessage"/>
+                    </center>
+                    <bottom>
+                        <Label fx:id="systemMessage" prefWidth="600.0" prefHeight="25.0"/>
+                    </bottom>
+                </BorderPane>
             </bottom>
         </BorderPane>
     </center>

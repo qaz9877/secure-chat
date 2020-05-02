@@ -10,10 +10,7 @@ import com.serical.common.MessageType;
 import com.serical.util.FxUtil;
 import com.serical.util.ImUtil;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
@@ -36,6 +33,15 @@ public class MessageController {
     private VBox showMessage;
 
     @FXML
+    private ScrollPane scrollMessage;
+
+    @FXML
+    private Label chooseWho;
+
+    @FXML
+    private Label systemMessage;
+
+    @FXML
     private void switchToPrimary() throws IOException {
         App.setRoot("primary");
     }
@@ -52,7 +58,10 @@ public class MessageController {
                 .ifPresent(v -> userListView.getItems().add(v)));
         userListView.setOnMouseClicked(event -> {
             final int index = userListView.getSelectionModel().getSelectedIndex();
-            this.selectUser = userList.get(index);
+            if (index != -1) {
+                this.selectUser = userList.get(index);
+                chooseWho.setText("您[" + ClientContext.getCurrentUser().getUserName() + "] 正在与 [" + this.selectUser.getUserName() + "] 对线中。。。。。。");
+            }
         });
     }
 
@@ -75,14 +84,21 @@ public class MessageController {
             }
 
             final ImUser currentUser = ClientContext.getCurrentUser();
-            ImUtil.sendMessage(ImMessage.builder()
+
+            final ImMessage imMessage = ImMessage.builder()
                     .sender(currentUser.getUid())
+                    .senderName(currentUser.getUserName())
                     .receiver(selectUser.getUid())
                     .messageType(MessageType.TEXT_MESSAGE)
                     .message(message)
                     .createTime(DateUtil.date())
-                    .build()
-            );
+                    .build();
+            // 发送消息
+            ImUtil.sendMessage(imMessage);
+
+            // append自己发的消息
+            appendMessage(imMessage);
+
             textArea.clear();
         }
     }
@@ -98,5 +114,15 @@ public class MessageController {
         showMessage.getChildren().add(new Label("[" + senderName + "] "
                 + DateUtil.formatDateTime(message.getCreateTime())
                 + " : " + message.getMessage()));
+        scrollMessage.vvalueProperty().bind(showMessage.heightProperty());
+    }
+
+    /**
+     * 显示系统消息
+     *
+     * @param message 消息
+     */
+    public void showSystemMessage(ImMessage message) {
+        systemMessage.setText("[系统通知]" + message.getMessage() + "");
     }
 }
