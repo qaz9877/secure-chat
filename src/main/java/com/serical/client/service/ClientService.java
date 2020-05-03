@@ -36,7 +36,7 @@ public class ClientService {
     public static void initImUser(String userName) throws NoSuchAlgorithmException, SSLException, InterruptedException {
         final String uid = IdUtil.fastSimpleUUID();
         final KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(1024);
+        generator.initialize(2048);
         final KeyPair keyPair = generator.genKeyPair();
 
         // 初始化用户
