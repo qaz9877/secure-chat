@@ -41,3 +41,7 @@ mvn clean package
 ```
 java -Dhost=serverIp -jar shade/secure-chat.jar
 ```
+
+# video
+[JavaFX+Netty点对点加密聊天演示
+](https://www.youtube.com/watch?v=QxBaaWaud1k)
